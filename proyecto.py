@@ -6,6 +6,8 @@ import argparse
 import time
 from mpi4py import MPI
 from multiprocessing import Pool
+from scipy.ndimage import gaussian_filter
+import cv2
 
 
 def read_fasta(file_name):
@@ -15,13 +17,14 @@ def read_fasta(file_name):
     return "".join(sequences)
 
 
-def draw_dotplot(matriz, fig_name='dotplot.svg'):
+def draw_dotplot(dotplot, fig_name='dotplot.svg'):
     plt.figure(figsize=(10, 10))
-    plt.imshow(matriz, cmap="Greys", aspect="auto")
+    plt.imshow(dotplot, cmap="Greys", aspect="auto")
     plt.xlabel("Secuencia 1")
     plt.ylabel("Secuencia 2")
     plt.savefig(fig_name)
     plt.show()
+
 
 def dotplot_sequential(sequence1, sequence2):
     dotplot = np.empty((len(sequence1), len(sequence2)))
@@ -35,7 +38,6 @@ def dotplot_sequential(sequence1, sequence2):
             else:
                 dotplot[i, j] = 0
     return dotplot
-
 
 def worker_multiprocessing(args):
     i, sequence1, sequence2 = args
@@ -65,11 +67,11 @@ def save_results_to_file(results, file_name="images/results.txt"):
 
 
 def acceleration(times):
-    return [times[0]/i for i in times]
+    return [times[0] / i for i in times]
 
 
 def efficiency(accelerations, num_threads):
-    return [accelerations[i]/num_threads[i] for i in range(len(num_threads))]
+    return [accelerations[i] / num_threads[i] for i in range(len(num_threads))]
 
 
 def draw_graphic_multiprocessing(times, accelerations, efficiencies, num_threads):
@@ -86,6 +88,7 @@ def draw_graphic_multiprocessing(times, accelerations, efficiencies, num_threads
     plt.legend(["Aceleración", "Eficiencia"])
     plt.savefig("images/images_multiprocessing/graficasMultiprocessing.png")
 
+
 def draw_graphic_mpi(times, accelerations, efficiencies, num_threads):
     plt.figure(figsize=(10, 10))
     plt.subplot(1, 2, 1)
@@ -99,7 +102,6 @@ def draw_graphic_mpi(times, accelerations, efficiencies, num_threads):
     plt.ylabel("Aceleración y Eficiencia")
     plt.legend(["Aceleración", "Eficiencia"])
     plt.savefig("images/images_mpi/graficasMPI.png")
-
 
 def parallel_mpi_dotplot(sequence_1, sequence_2):
     comm = MPI.COMM_WORLD
@@ -118,7 +120,7 @@ def parallel_mpi_dotplot(sequence_1, sequence_2):
                 else:
                     dotplot[i, j] = np.float16(0.6)
             else:
-                    dotplot[i, j] = np.float16(0.0)
+                dotplot[i, j] = np.float16(0.0)
 
     dotplot = comm.gather(dotplot, root=0)
 
@@ -128,6 +130,20 @@ def parallel_mpi_dotplot(sequence_1, sequence_2):
 
         return merged_data
 
+def apply_filter(image, path_image):
+    kernel_diagonales = np.array([[2, -1, -1],
+                                  [-1, 2, -1],
+                                  [-1, -1, 2]])
+
+    filtered_image_diagonales = cv2.filter2D(image, -1, kernel_diagonales)
+
+    threshold_value = 100 
+    _, thresholded_image = cv2.threshold(filtered_image_diagonales, threshold_value, 255, cv2.THRESH_BINARY)
+
+    cv2.imwrite(path_image, filtered_image_diagonales)
+    cv2.imshow('Diagonales', filtered_image_diagonales)
+    cv2.waitKey(0)
+    cv2.destroyAllWindows()
 
 def main():
     comm = MPI.COMM_WORLD
@@ -140,7 +156,7 @@ def main():
                         default=None, help='Query sequence in FASTA format')
     parser.add_argument('--file2', dest='file2', type=str,
                         default=None, help='Subject sequence in FASTA format')
-    
+
     parser.add_argument('--sequential', action='store_true',
                         help='Ejecutar en modo secuencial')
     parser.add_argument('--multiprocessing', action='store_true',
@@ -160,27 +176,28 @@ def main():
         try:
             merged_sequence_1 = read_fasta(file_path_1)
             merged_sequence_2 = read_fasta(file_path_2)
-            
+
         except FileNotFoundError as e:
             print("Archivo no encontrado, verifique la ruta")
             exit(1)
 
-        Secuencia1 = merged_sequence_1[0:16000]
-        Secuencia2 = merged_sequence_2[0:16000]
+        Secuencia1 = merged_sequence_1[0:10000]
+        Secuencia2 = merged_sequence_2[0:10000]
 
         dotplot = np.empty([len(Secuencia1), len(Secuencia2)])
         results_print = []
+        results_print_mpi = []
         times_multiprocessing = []
         times_mpi = []
 
     if args.sequential:
         start_secuencial = time.time()
         dotplot = dotplot_sequential(Secuencia1, Secuencia2)
+        dotplot_filtered = apply_filter(dotplot)
         results_print.append(
             f"Tiempo de ejecución secuencial: {time.time() - start_secuencial}")
-        save_results_to_file(results_print,file_name="images/results_sequential.txt")
-        draw_dotplot(dotplot[:500, :500],
-                     fig_name='images/images_sequential/dotplot_sequential.png')
+        draw_dotplot(dotplot_filtered, fig_name="images/dotplot_secuencial.png")
+
 
     if args.multiprocessing:
         num_threads = [1, 2, 4, 8]
@@ -209,31 +226,38 @@ def main():
             times_multiprocessing, accelerations, efficiencies, num_threads)
         draw_dotplot(dotplotMultiprocessing[:600, :600],
                      fig_name='images/images_multiprocessing/dotplot_multiprocessing.png')
+        
+        image = cv2.imread('images/images_multiprocessing/dotplot_multiprocessing.png')
+        path_image = 'images/images_filter/dotplot_filter_multiprocessing.png'
+        apply_filter(image, path_image)
 
     if args.mpi:
         for thread in num_threads_array:
             start_time = time.time()
-            dotplot_mpi = dotplot_mpi = parallel_mpi_dotplot(Secuencia1, Secuencia2)
+            dotplot_mpi = parallel_mpi_dotplot(Secuencia1, Secuencia2)
             times_mpi.append(time.time() - start_time)
-            results_print.append(
+            results_print_mpi.append(
                 f"Tiempo de ejecución mpi con {thread} hilos: {time.time() - start_time}")
             
         accelerations = acceleration(times_mpi)
         for i in range(len(accelerations)):
-            results_print.append(
+            results_print_mpi.append(
                 f"Aceleración con {num_threads_array[i]} hilos: {accelerations[i]}")
         
         efficiencies = efficiency(accelerations, num_threads_array)
         for i in range(len(efficiencies)):
-            results_print.append(
+            results_print_mpi.append(
                 f"Eficiencia con {num_threads_array[i]} hilos: {efficiencies[i]}")
 
-        save_results_to_file(results_print,file_name="images/results_mpi.txt")
+        save_results_to_file(results_print_mpi,file_name="images/results_mpi.txt")
         draw_graphic_mpi(
             times_mpi, accelerations, efficiencies, num_threads_array)
         draw_dotplot(dotplot_mpi[:600, :600],
                      fig_name='images/images_mpi/dotplot_mpi.png')
         
+        image = cv2.imread('images/images_mpi/dotplot_mpi.png')
+        path_image = 'images/images_filter/dotplot_filter_mpi.png'
+        apply_filter(image, path_image)
 
 
 if __name__ == "__main__":
