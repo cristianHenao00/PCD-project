@@ -6,7 +6,6 @@ import argparse
 import time
 from mpi4py import MPI
 from multiprocessing import Pool
-from scipy.ndimage import gaussian_filter
 import cv2
 
 
