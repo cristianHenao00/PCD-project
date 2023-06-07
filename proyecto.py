@@ -156,16 +156,17 @@ def main():
         file_path_2 = args.file2
 
         num_threads_array = args.num_processes
-        
-        if file_path_1 is None or file_path_2 is None:
-            print("Error: Debes especificar los archivos de entrada")
+
+        try:
+            merged_sequence_1 = read_fasta(file_path_1)
+            merged_sequence_2 = read_fasta(file_path_2)
+            
+        except FileNotFoundError as e:
+            print("Archivo no encontrado, verifique la ruta")
             exit(1)
 
-        merged_sequence_1 = read_fasta(file_path_1)
-        merged_sequence_2 = read_fasta(file_path_2)
-
-        Secuencia1 = merged_sequence_1[0:10000]
-        Secuencia2 = merged_sequence_2[0:10000]
+        Secuencia1 = merged_sequence_1[0:16000]
+        Secuencia2 = merged_sequence_2[0:16000]
 
         dotplot = np.empty([len(Secuencia1), len(Secuencia2)])
         results_print = []
@@ -175,11 +176,11 @@ def main():
     if args.sequential:
         start_secuencial = time.time()
         dotplot = dotplot_sequential(Secuencia1, Secuencia2)
-        print(dotplot)
         results_print.append(
             f"Tiempo de ejecución secuencial: {time.time() - start_secuencial}")
+        save_results_to_file(results_print,file_name="images/results_sequential.txt")
         draw_dotplot(dotplot[:500, :500],
-                     fig_name='images/dotplot_sequential.png')
+                     fig_name='images/images_sequential/dotplot_sequential.png')
 
     if args.multiprocessing:
         num_threads = [1, 2, 4, 8]
