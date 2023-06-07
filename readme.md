@@ -34,17 +34,17 @@ git clone https://github.com/cristianHenao00/PCD-project.git
 Para ejecutar el programa secuencial, ejecute el siguiente comando:
 
 ```
-python proyecto.py --file1=E_coli.fna --file2=Salmonella.fna --sequential
+python proyecto.py --file1=./data/E_coli.fna --file2=./data/Salmonella.fna --sequential
 ```
 
 Para ejecutar multiprocessing, ejecute el siguiente comando:
 
 ```
-python proyecto.py --file1=E_coli.fna --file2=Salmonella.fna --multiprocessing
+python proyecto.py --file1=./data/E_coli.fna --file2=./data/Salmonella.fna --multiprocessing
 ```
 
 Para ejecutar mpi4py, ejecute el siguiente comando:
 
 ```
-python proyecto.py --num_processes 1 2 4 --file1=E_coli.fna --file2=Salmonella.fna --mpi
+python proyecto.py --num_processes 1 2 4 --file1=./data/E_coli.fna --file2=./data/Salmonella.fna --mpi
 ```
