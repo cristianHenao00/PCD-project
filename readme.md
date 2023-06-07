@@ -15,7 +15,7 @@ conda activate PCD-project
 
 A continuación, instale los paquetes de Python necesarios
 ```
-conda install numpy matplotlib mpi4py
+conda install numpy matplotlib mpi4py biopython
 ```
 
 Finalmente, descargue el repositorio
@@ -24,8 +24,17 @@ git clone https://github.com/cristianHenao00/PCD-project.git
 ```
 
 ### Ejecución
-Para obtener ayuda, ejecute el siguiente comando:
+Para ejecutar el programa secuencial, ejecute el siguiente comando:
 ```
-mpirun -np 1 python proyecto.py -h
+python proyecto.py --file1=E_coli.fna --file2=Salmonella.fna --sequential
 ```
-Use: mpirun -np <threads> python proyecto.py -q file.fna ... [options]
+
+Para ejecutar multiprocessing, ejecute el siguiente comando:
+```
+python proyecto.py --file1=E_coli.fna --file2=Salmonella.fna --multiprocessing
+```
+
+Para ejecutar mpi4py, ejecute el siguiente comando:
+```
+python proyecto.py --num_processes 1 2 4 --file1=E_coli.fna --file2=Salmonella.fna --mpi
+```

@@ -156,6 +156,10 @@ def main():
         file_path_2 = args.file2
 
         num_threads_array = args.num_processes
+        
+        if file_path_1 is None or file_path_2 is None:
+            print("Error: Debes especificar los archivos de entrada")
+            exit(1)
 
         merged_sequence_1 = read_fasta(file_path_1)
         merged_sequence_2 = read_fasta(file_path_2)
