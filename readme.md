@@ -46,5 +46,5 @@ python proyecto.py --file1=./data/E_coli.fna --file2=./data/Salmonella.fna --mul
 Para ejecutar mpi4py, ejecute el siguiente comando:
 
 ```
-python proyecto.py --num_processes 1 2 4 --file1=./data/E_coli.fna --file2=./data/Salmonella.fna --mpi
+python proyecto.py --num_processes 1 2 3 4 --file1=./data/E_coli.fna --file2=./data/Salmonella.fna --mpi
 ```
