@@ -7,6 +7,7 @@ import time
 from mpi4py import MPI
 from multiprocessing import Pool
 import cv2
+from tqdm import tqdm # esta librería es para mirar el progreso de un for
 
 
 def read_fasta(file_name):
@@ -26,8 +27,8 @@ def draw_dotplot(dotplot, fig_name='dotplot.svg'):
 
 
 def dotplot_sequential(sequence1, sequence2):
-    dotplot = np.empty((len(sequence1), len(sequence2)))
-    for i in range(len(sequence1)):
+    dotplot = np.empty((len(sequence1), len(sequence2)))    
+    for i in tqdm(range(len(sequence1))):
         for j in range(len(sequence2)):
             if sequence1[i] == sequence2[j]:
                 if i == j:
@@ -111,7 +112,7 @@ def parallel_mpi_dotplot(sequence_1, sequence_2):
 
     dotplot = np.empty([len(chunks[rank]), len(sequence_2)])
 
-    for i in range(len(chunks[rank])):
+    for i in tqdm(range(len(chunks[rank]))):
         for j in range(len(sequence_2)):
             if sequence_1[chunks[rank][i]] == sequence_2[j]:
                 if (i == j):
@@ -183,8 +184,8 @@ def main():
             print("Archivo no encontrado, verifique la ruta")
             exit(1)
 
-        Secuencia1 = merged_sequence_1[0:10000]
-        Secuencia2 = merged_sequence_2[0:10000]
+        Secuencia1 = merged_sequence_1[0:16000]
+        Secuencia2 = merged_sequence_2[0:16000]
 
         dotplot = np.empty([len(Secuencia1), len(Secuencia2)])
         results_print = []
