@@ -180,8 +180,8 @@ def main():
             print("Archivo no encontrado, verifique la ruta")
             exit(1)
 
-        Secuencia1 = merged_sequence_1[0:10000]
-        Secuencia2 = merged_sequence_2[0:10000]
+        Secuencia1 = merged_sequence_1[0:16000]
+        Secuencia2 = merged_sequence_2[0:16000]
 
         dotplot = np.empty([len(Secuencia1), len(Secuencia2)])
         results_print = []
