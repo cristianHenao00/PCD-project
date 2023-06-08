@@ -171,6 +171,7 @@ def main():
     args = parser.parse_args()
 
     if rank == 0:
+        chargeFilesStart= time.time();
         file_path_1 = args.file1
         file_path_2 = args.file2
 
@@ -186,6 +187,9 @@ def main():
 
         Secuencia1 = merged_sequence_1[0:16000]
         Secuencia2 = merged_sequence_2[0:16000]
+        chargeFilesFinish=time.time()
+
+        save_results_to_file([F"Tiempo de carga de los archivos: {chargeFilesFinish - chargeFilesStart}"],file_name="images/results_charge_files.txt")
 
         dotplot = np.empty([len(Secuencia1), len(Secuencia2)])
         results_print = []
