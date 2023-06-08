@@ -110,17 +110,17 @@ def parallel_mpi_dotplot(sequence_1, sequence_2):
 
     chunks = np.array_split(range(len(sequence_1)), size)
 
-    dotplot = np.empty([len(chunks[rank]), len(sequence_2)], dtype=np.float16)
+    dotplot = np.empty([len(chunks[rank]), len(sequence_2)])
 
     for i in tqdm(range(len(chunks[rank]))):
         for j in range(len(sequence_2)):
             if sequence_1[chunks[rank][i]] == sequence_2[j]:
                 if (i == j):
-                    dotplot[i, j] = np.float16(1.0)
+                    dotplot[i, j] = 1
                 else:
-                    dotplot[i, j] = np.float16(0.6)
+                    dotplot[i, j] = 0.6
             else:
-                dotplot[i, j] = np.float16(0.0)
+                dotplot[i, j] = 0
 
     dotplot = comm.gather(dotplot, root=0)
 
@@ -130,18 +130,21 @@ def parallel_mpi_dotplot(sequence_1, sequence_2):
 
         return merged_data
 
-def apply_filter(image, path_image):
-    kernel_diagonales = np.array([[2, -1, -1],
-                                  [-1, 2, -1],
-                                  [-1, -1, 2]])
+def apply_filter(matrix, path_image):
+    #matrix = matrix.astype(np.uint8)
+    kernel_diagonales = np.array([[1, -1, -1],
+                                  [-1, 1, -1],
+                                  [-1, -1, 1]])
 
-    filtered_image_diagonales = cv2.filter2D(image, -1, kernel_diagonales)
+    filtered_matrix = cv2.filter2D(matrix, -1, kernel_diagonales)
 
-    threshold_value = 100 
-    _, thresholded_image = cv2.threshold(filtered_image_diagonales, threshold_value, 255, cv2.THRESH_BINARY)
+    normalized_matrix = cv2.normalize(filtered_matrix, None, 0, 127, cv2.NORM_MINMAX)
 
-    cv2.imwrite(path_image, filtered_image_diagonales)
-    cv2.imshow('Diagonales', filtered_image_diagonales)
+    threshold_value = 50
+    _, thresholded_matrix = cv2.threshold(normalized_matrix, threshold_value, 255, cv2.THRESH_BINARY)
+
+    cv2.imwrite(path_image, thresholded_matrix)
+    cv2.imshow('Diagonales', thresholded_matrix)
     cv2.waitKey(0)
     cv2.destroyAllWindows()
 
@@ -192,15 +195,15 @@ def main():
 
     if args.sequential:
         start_secuencial = time.time()
-        dotplot = dotplot_sequential(Secuencia1, Secuencia2)
-        dotplot_filtered = apply_filter(dotplot)
+        dotplotSequential = dotplot_sequential(Secuencia1, Secuencia2)
         results_print.append(
             f"Tiempo de ejecución secuencial: {time.time() - start_secuencial}")
-        draw_dotplot(dotplot_filtered, fig_name="images/dotplot_secuencial.png")
-
+        draw_dotplot(dotplotSequential[:600, :600], fig_name="images/dotplot_secuencial.png")
+        path_image = 'images/images_filter/dotplot_filter_sequential.png'  
+        apply_filter(dotplotSequential[:600, :600], path_image)
 
     if args.multiprocessing:
-        num_threads = [1, 2, 4, 8]
+        num_threads = [1, 2, 3]
         for num_thread in num_threads:
             start_time = time.time()
             dotplotMultiprocessing = np.array(
@@ -208,7 +211,7 @@ def main():
             times_multiprocessing.append(time.time() - start_time)
             results_print.append(
                 f"Tiempo de ejecución multiprocessing con {num_thread} hilos: {time.time() - start_time}")
-
+            
         # Aceleración
         accelerations = acceleration(times_multiprocessing)
         for i in range(len(accelerations)):
@@ -227,9 +230,8 @@ def main():
         draw_dotplot(dotplotMultiprocessing[:600, :600],
                      fig_name='images/images_multiprocessing/dotplot_multiprocessing.png')
         
-        image = cv2.imread('images/images_multiprocessing/dotplot_multiprocessing.png')
-        path_image = 'images/images_filter/dotplot_filter_multiprocessing.png'
-        apply_filter(image, path_image)
+        path_image = 'images/images_filter/dotplot_filter_multiprocessing.png'  
+        apply_filter(dotplotMultiprocessing[:600, :600], path_image)
 
     if args.mpi:
         for thread in num_threads_array:
@@ -255,9 +257,9 @@ def main():
         draw_dotplot(dotplot_mpi[:600, :600],
                      fig_name='images/images_mpi/dotplot_mpi.png')
         
-        image = cv2.imread('images/images_mpi/dotplot_mpi.png')
-        path_image = 'images/images_filter/dotplot_filter_mpi.png'
-        apply_filter(image, path_image)
+        path_image = 'images/images_filter/dotplot_filter_mpi.png'  
+        apply_filter(dotplot_mpi[:600, :600], path_image)
+        
 
 
 if __name__ == "__main__":
