@@ -12,15 +12,17 @@ El proyecto fue desarrollado usando Python 3.10.9 y con soporte de computación 
 
 ### Instalacion
 
-```
-conda create -n PCD-project python=3.10.9
-conda activate PCD-project
-```
+Tener instalado python, para la posterior instalación de la slibrerias necesarias
 
 A continuación, instale los paquetes de Python necesarios
 
 ```
-conda install numpy matplotlib mpi4py biopython opencv-python
+pip install numpy
+pip install matplotlib
+pip install mpi4py
+pip install biopython
+pip install opencv-python
+pip install tqdm==2.2.3
 ```
 
 Finalmente, descargue el repositorio
