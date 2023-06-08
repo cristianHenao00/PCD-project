@@ -110,17 +110,17 @@ def parallel_mpi_dotplot(sequence_1, sequence_2):
 
     chunks = np.array_split(range(len(sequence_1)), size)
 
-    dotplot = np.empty([len(chunks[rank]), len(sequence_2)])
+    dotplot = np.empty([len(chunks[rank]), len(sequence_2)], dtype=np.float16)
 
     for i in tqdm(range(len(chunks[rank]))):
         for j in range(len(sequence_2)):
             if sequence_1[chunks[rank][i]] == sequence_2[j]:
                 if (i == j):
-                    dotplot[i, j] = 1
+                    dotplot[i, j] = np.float16(1.0)
                 else:
-                    dotplot[i, j] = 0.6
+                    dotplot[i, j] = np.float16(0.6)
             else:
-                dotplot[i, j] = 0
+                dotplot[i, j] = np.float16(0.0)
 
     dotplot = comm.gather(dotplot, root=0)
 
@@ -198,12 +198,13 @@ def main():
         dotplotSequential = dotplot_sequential(Secuencia1, Secuencia2)
         results_print.append(
             f"Tiempo de ejecución secuencial: {time.time() - start_secuencial}")
-        draw_dotplot(dotplotSequential[:600, :600], fig_name="images/dotplot_secuencial.png")
+        draw_dotplot(dotplotSequential[:600, :600], fig_name="images/images_sequential/dotplot_secuencial.png")
         path_image = 'images/images_filter/dotplot_filter_sequential.png'  
         apply_filter(dotplotSequential[:600, :600], path_image)
+        save_results_to_file(results_print,file_name="images/results_sequential.txt")
 
     if args.multiprocessing:
-        num_threads = [1, 2, 3]
+        num_threads = [1, 2, 4, 8]
         for num_thread in num_threads:
             start_time = time.time()
             dotplotMultiprocessing = np.array(
